@@ -1,9 +1,11 @@
 import { useState, useRef, useContext } from "react";
+import { useHistory } from "react-router-dom/cjs/react-router-dom.min";
 
-import AuthContext from '../../store/auth-context';
+import AuthContext from "../../store/auth-context";
 import classes from "./AuthForm.module.css";
 
 const AuthForm = () => {
+  const history = useHistory();
   const emailInputRef = useRef();
   const passwordInputRef = useRef();
 
@@ -23,26 +25,27 @@ const AuthForm = () => {
     const enteredPassword = passwordInputRef.current.value;
 
     // optional: Add validation
+
     setIsLoading(true);
     let url;
     if (isLogin) {
-      url = 
-      "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=AIzaSyC88sxFDVNoXIKrw773g-ykvcdHhhqBSe8";
+      url =
+        "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=AIzaSyC88sxFDVNoXIKrw773g-ykvcdHhhqBSe8";
     } else {
-      url = 
+      url =
         "https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=AIzaSyC88sxFDVNoXIKrw773g-ykvcdHhhqBSe8";
     }
-       fetch(url, {
-          method: "POST",
-          body: JSON.stringify({
-            email: enteredEmail,
-            password: enteredPassword,
-            returnSecureToken: true,
-          }),
-          headers: {
-            "Content-Type": "application/json",
-          },
-        })
+    fetch(url, {
+      method: "POST",
+      body: JSON.stringify({
+        email: enteredEmail,
+        password: enteredPassword,
+        returnSecureToken: true,
+      }),
+      headers: {
+        "Content-Type": "application/json",
+      },
+    })
       .then((res) => {
         setIsLoading(false);
         if (res.ok) {
@@ -57,8 +60,13 @@ const AuthForm = () => {
             throw new Error(errorMessage);
           });
         }
-      }).then((data) => {
-        authCtx.login(data.idToken);
+      })
+      .then((data) => {
+        const expirationTime = new Date(
+          new Date().getTime() + +data.expiresIn * 1000
+        );
+        authCtx.login(data.idToken, expirationTime.toISOString());
+        history.replace("/");
       })
       .catch((err) => {
         alert(err.message);
@@ -83,10 +91,10 @@ const AuthForm = () => {
           />
         </div>
         <div className={classes.actions}>
-        {!isLoading && (
-          <button>{isLogin ? "Login" : "Create Account"}</button>
-        )}
-        {isLoading && <p>Sending request...</p>}
+          {!isLoading && (
+            <button>{isLogin ? "Login" : "Create Account"}</button>
+          )}
+          {isLoading && <p>Sending request...</p>}
           <button
             type="button"
             className={classes.toggle}
